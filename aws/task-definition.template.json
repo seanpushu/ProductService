@@ -9,7 +9,7 @@
   "containerDefinitions": [
     {
       "name": "product-service",
-      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/product-service:latest",
+      "image": "ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/product-service:latest",
       "essential": true,
       "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }],
       "environment": [{ "name": "DATABASE_URL", "value": "DATABASE_URL_VALUE" }],
@@ -17,7 +17,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/product-service",
-          "awslogs-region": "REGION",
+          "awslogs-region": "AWS_REGION",
           "awslogs-stream-prefix": "ecs"
         }
       }

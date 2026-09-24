@@ -42,7 +42,7 @@ def main() -> int:
         return 1
     existing_names = {p["name"] for p in existing.get("items", [])}
 
-    items = json.loads(SEED_FILE.read_text(encoding="utf-8"))
+    items = json.loads(SEED_FILE.read_text(encoding="utf-8-sig"))  # tolerate a BOM
     created = skipped = failed = 0
     for item in items:
         if item["name"] in existing_names:

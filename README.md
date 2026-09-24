@@ -55,9 +55,16 @@ Reads `seed/products.json`; image URLs there point at the S3 bucket.
 
 ## Deploy to AWS
 
-See the guide, sections 6-13: S3 bucket -> RDS PostgreSQL -> ECR push -> ECS task
-definition -> ECS service + ALB. Templates for the JSON inputs live in `aws/`.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\aws\up.ps1                  # first build (S3, RDS, ECR, ECS Fargate, ALB, HTTPS)
+powershell -ExecutionPolicy Bypass -File .\aws\up.ps1 -SkipImagePush   # rebuild after down.ps1
+powershell -ExecutionPolicy Bypass -File .\aws\down.ps1                # idle: stop RDS, remove service + ALB
+```
+
+`aws/up.ps1` is idempotent: each step checks whether the resource exists. Resource IDs and the
+generated database password are kept in `aws/state.local.json` (gitignored).
 `DATABASE_URL` is injected through the task definition; never commit real credentials.
+Deployed at `https://api.shupu.me` when the stack is up; see the guide, section 6, for the record.
 
 ## Layout
 

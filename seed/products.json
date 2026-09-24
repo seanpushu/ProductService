@@ -1,44 +1,45 @@
 [
   {
-    "name": "Oak Desk Lamp",
-    "description": "Minimalist oak desk lamp with warm LED bulb.",
-    "price_cents": 4999,
+    "name": "Cut & Peeled Baby Carrots, 16 Oz",
+    "description": "Washed and ready to eat. Perfect for cooking or snacking. Non-GMO, no preservatives, keep refrigerated.",
+    "price_cents": 132,
     "currency": "USD",
-    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/oak-desk-lamp.png"
+    "image_url": "https://shu-product-images-608799855296.s3.amazonaws.com/products/baby-carrots.jpg"
   },
   {
-    "name": "Ceramic Coffee Mug",
-    "description": "12 oz matte ceramic mug, dishwasher safe.",
-    "price_cents": 1499,
+    "name": "Blueberries, 1 Pint",
+    "description": "Fresh blueberries, 1 pint. Vegan, gluten free, paleo.",
+    "price_cents": 399,
     "currency": "USD",
-    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/ceramic-coffee-mug.png"
+    "image_url": "https://shu-product-images-608799855296.s3.amazonaws.com/products/blueberries.jpg"
   },
   {
-    "name": "Canvas Tote Bag",
-    "description": "Heavy cotton canvas tote, natural color.",
-    "price_cents": 2299,
+    "name": "Sceptre 22-Inch Gaming Monitor, FHD 1080p, 144Hz",
+    "description": "22-inch FHD 1080p gaming monitor, up to 144Hz, HDMI and DisplayPort, built-in speakers, machine black.",
+    "price_cents": 6497,
     "currency": "USD",
-    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/canvas-tote-bag.png"
+    "image_url": "https://shu-product-images-608799855296.s3.amazonaws.com/products/sceptre-22-monitor.jpg"
   },
   {
-    "name": "Wireless Earbuds",
-    "description": "Bluetooth 5.3 earbuds with charging case.",
-    "price_cents": 5999,
+    "name": "Electric Toothbrush Replacement Heads, 8 Pack",
+    "description": "Soft DuPont bristle replacement heads compatible with Philips Sonicare. 8 pack, white.",
+    "price_cents": 799,
     "currency": "USD",
-    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/wireless-earbuds.png"
+    "image_url": "https://shu-product-images-608799855296.s3.amazonaws.com/products/toothbrush-heads-8pack.jpg"
   },
   {
-    "name": "Linen Throw Pillow",
-    "description": "18 x 18 inch linen pillow cover with insert.",
-    "price_cents": 3499,
+    "name": "Inflatable Dinosaur Costume, Adult T-Rex",
+    "description": "Halloween inflatable T-Rex costume for adults, polyester, hand wash only. Brown.",
+    "price_cents": 2699,
     "currency": "USD",
-    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/linen-throw-pillow.png"
+    "image_url": "https://shu-product-images-608799855296.s3.amazonaws.com/products/inflatable-dinosaur-costume.jpg"
   },
   {
-    "name": "Stainless Water Bottle",
-    "description": "750 ml insulated stainless steel bottle.",
-    "price_cents": 2799,
+    "name": "Fire TV Stick HD (newest model)",
+    "description": "HD streaming stick with Alexa Voice Remote, free and live TV, powered by the TV.",
+    "price_cents": 3999,
     "currency": "USD",
-    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/stainless-water-bottle.png"
+    "image_url": "https://shu-product-images-608799855296.s3.amazonaws.com/products/fire-tv-stick-hd.jpg"
   }
 ]
+

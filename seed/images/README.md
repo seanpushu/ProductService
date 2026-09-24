@@ -1,14 +1,14 @@
 # Product template images
 
-Put the product images here before running the S3 upload step.
-File names should match the tail of `image_url` in `../products.json`:
+Six images cropped from Amazon product page screenshots supplied by the owner on 2026-09-24,
+used only as demo data for a course assignment. File names match the tail of `image_url`
+in `../products.json`:
 
-- oak-desk-lamp.png
-- ceramic-coffee-mug.png
-- canvas-tote-bag.png
-- wireless-earbuds.png
-- linen-throw-pillow.png
-- stainless-water-bottle.png
+- baby-carrots.jpg
+- blueberries.jpg
+- sceptre-22-monitor.jpg
+- toothbrush-heads-8pack.jpg
+- inflatable-dinosaur-costume.jpg
+- fire-tv-stick-hd.jpg
 
-Use images you are allowed to publish (own photos, AI-generated, or a free license such as Unsplash / Pexels).
 If you change a file name or format, update `products.json` too.

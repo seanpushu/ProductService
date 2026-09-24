@@ -358,9 +358,48 @@ aws rds stop-db-instance --db-instance-identifier product-db                    
 - Docker：`product-service:local` 构建成功，`linux/amd64`，约 70 MB；`docker compose up --build` 里 api 容器 `/health` 返回 ok 并能读到 db 里的数据。
 - 设计文档：`AIProductDesign/API_DB_DESIGN_V2.md` 已补 02 Product Service 五个接口、Table 9 `products`、Relationships 一行，以及 Pending decisions 里老师提出的 `ai_quota` 合并问题。
 
-### 阶段 B 未开始（你选择暂不创建 AWS 资源）
+### 2026-09-24 阶段 B 已完成并验证，随后进入低成本待机
 
-- 已核实账号状态：默认 VPC `vpc-04c34e1e3e6f6fc87`（us-east-1a–f 六个子网；部署时避开 1e，Fargate/ALB 在该可用区支持不全）；账号级 S3 Block Public Access 未开启，所以桶级公开读策略可用；无现存 RDS / ECS 集群；ECR 里有一个旧仓库 `tmp`；Route 53 已有 `shupu.me` 托管区，可申请 `api.shupu.me`。
-- 商品图片：你决定自己找图。把图片放到 `seed/images/`，文件名与 `seed/products.json` 里的 `image_url` 末尾一致（`oak-desk-lamp.png` 等，格式可改，改了就同步改 JSON）。
-- HTTPS：你选择要做，但它依赖 ALB 先存在，所以随阶段 B 一起执行。
-- 开始阶段 B 时，从步骤 6 起按顺序执行；每一步的命令都在上面。
+第 4 节的命令已整理成两个脚本，以后不用手敲：
+
+- `aws\up.ps1`：从零搭建或从待机状态重建（每一步先查资源是否存在，所以可以反复跑）。首次全程约 15 分钟（RDS 创建占 7 分钟）；重建时加 `-SkipImagePush` 约 5 分钟。
+- `aws\down.ps1`：进入待机：ECS Service 删掉（任务定义保留）、ALB / 目标组删掉、RDS 停机。
+- `aws\state.local.json`：脚本记录的资源 ID 和数据库密码，已被 `.gitignore` 排除，不要提交。
+
+运行方式（在 `ProductService` 目录）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\aws\up.ps1 -SkipImagePush   # 重建
+powershell -ExecutionPolicy Bypass -File .\aws\down.ps1                 # 待机
+```
+
+**本次创建的资源（us-east-1，账号 608799855296）**
+
+- 安全组：`product-alb-sg`（80/443 对公网）、`product-ecs-sg`（8080 只允许 ALB）、`product-rds-sg`（5432 只允许 ECS）。
+- S3：`shu-product-images-608799855296`，`products/` 前缀公开读，6 张商品图。URL 例：`https://shu-product-images-608799855296.s3.amazonaws.com/products/blueberries.jpg`（已验证 HTTP 200，image/jpeg）。
+- RDS：`product-db`，PostgreSQL，db.t4g.micro，20 GB gp3，不对公网开放，无自动备份。Endpoint `product-db.cw5uiyce6mji.us-east-1.rds.amazonaws.com`。
+- ECR：`product-service:latest`（linux/amd64）。
+- ECS：集群 `product-cluster`，任务定义 `product-service:1`（0.25 vCPU / 0.5 GB，环境变量 `DATABASE_URL`，日志到 CloudWatch `/ecs/product-service`），执行角色 `productEcsTaskExecutionRole`。
+- ALB：`product-alb`，目标组 `product-tg`（健康检查 `/health`），监听 80 和 443。
+- ACM 证书 `api.shupu.me`（DNS 验证已通过，证书免费且长期保留）；Route 53 A 记录 `api.shupu.me` 别名指向 ALB。
+
+**线上验证结果（通过 https://api.shupu.me）**
+
+- 目标组健康状态 `healthy`；`/health` 经 ALB HTTP 与 HTTPS 域名均返回 `{"status":"ok"}`。
+- `scripts\seed_products.py` 写入 6 个商品，全部 201。
+- `GET /products` total=6，每条 `image_url` 指向 S3 且可打开。
+- `PUT` 改价 → 3499；`DELETE` → 204，默认列表变 5、`include_inactive=true` 仍是 6；再 `PUT status=ACTIVE` 重新上架。
+- 线上 Swagger 截图：`docs/swagger-live-2026-09-24.png`。
+
+**当前状态：待机（2026-09-24 01:30 后）**
+
+- ECS Service 已删除、ALB 与目标组已删除、RDS 处于 stopped。剩余费用只有 RDS 20 GB 存储约 $2.3/月加 S3/ECR 几美分。
+- 因此 `https://api.shupu.me` 现在打不开是正常的；Route 53 记录仍在，`up.ps1` 重建后会自动把它指到新的 ALB 地址。
+- RDS 停机 7 天后 AWS 会自动启动，之后重新跑一次 `down.ps1` 即可再停。数据（6 个商品）保留在 RDS 里。
+- 演示前一天或前一小时跑 `up.ps1 -SkipImagePush`，演示完跑 `down.ps1`。
+
+**遇到并修掉的问题**
+
+- PowerShell 函数里传 `Name=a,Values=b` 会被拆成数组，必须加引号。
+- 任务定义模板里的 `REGION` 占位符误替换了 `awslogs-region` 键名，改为 `AWS_REGION`。
+- `Set-Content -Encoding UTF8` 会写入 BOM 导致 JSON 解析失败，种子脚本改用 `utf-8-sig` 读取。
