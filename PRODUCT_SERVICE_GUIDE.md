@@ -350,4 +350,17 @@ aws rds stop-db-instance --db-instance-identifier product-db                    
 
 ## 6. 实际执行记录
 
-（部署完成后填写：资源名称、ALB DNS、验证输出、遗留问题。）
+### 2026-09-23 阶段 A 已完成
+
+- 代码：`Govalley/ProductService`，GitHub 私有仓库 https://github.com/seanpushu/ProductService（提交 `0aa7be4`）。需要交给老师时可改为公开：`gh repo edit seanpushu/ProductService --visibility public`。
+- 单元测试：`pytest` 3 个用例通过（SQLite 内存库）。
+- 本地 PostgreSQL 16（compose）验证：`POST` 201 → `GET` 列表 total=1 → `GET /{id}` → `PUT` 改价 999 → `DELETE` 204 → 默认列表 total=0、`include_inactive=true` 显示 INACTIVE → 不存在 ID 返回 404。`\d products` 确认 9 个字段、主键与 `price_cents >= 0` 检查约束都建出来了。
+- Docker：`product-service:local` 构建成功，`linux/amd64`，约 70 MB；`docker compose up --build` 里 api 容器 `/health` 返回 ok 并能读到 db 里的数据。
+- 设计文档：`AIProductDesign/API_DB_DESIGN_V2.md` 已补 02 Product Service 五个接口、Table 9 `products`、Relationships 一行，以及 Pending decisions 里老师提出的 `ai_quota` 合并问题。
+
+### 阶段 B 未开始（你选择暂不创建 AWS 资源）
+
+- 已核实账号状态：默认 VPC `vpc-04c34e1e3e6f6fc87`（us-east-1a–f 六个子网；部署时避开 1e，Fargate/ALB 在该可用区支持不全）；账号级 S3 Block Public Access 未开启，所以桶级公开读策略可用；无现存 RDS / ECS 集群；ECR 里有一个旧仓库 `tmp`；Route 53 已有 `shupu.me` 托管区，可申请 `api.shupu.me`。
+- 商品图片：你决定自己找图。把图片放到 `seed/images/`，文件名与 `seed/products.json` 里的 `image_url` 末尾一致（`oak-desk-lamp.png` 等，格式可改，改了就同步改 JSON）。
+- HTTPS：你选择要做，但它依赖 ALB 先存在，所以随阶段 B 一起执行。
+- 开始阶段 B 时，从步骤 6 起按顺序执行；每一步的命令都在上面。
