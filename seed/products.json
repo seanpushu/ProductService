@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Oak Desk Lamp",
+    "description": "Minimalist oak desk lamp with warm LED bulb.",
+    "price_cents": 4999,
+    "currency": "USD",
+    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/oak-desk-lamp.png"
+  },
+  {
+    "name": "Ceramic Coffee Mug",
+    "description": "12 oz matte ceramic mug, dishwasher safe.",
+    "price_cents": 1499,
+    "currency": "USD",
+    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/ceramic-coffee-mug.png"
+  },
+  {
+    "name": "Canvas Tote Bag",
+    "description": "Heavy cotton canvas tote, natural color.",
+    "price_cents": 2299,
+    "currency": "USD",
+    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/canvas-tote-bag.png"
+  },
+  {
+    "name": "Wireless Earbuds",
+    "description": "Bluetooth 5.3 earbuds with charging case.",
+    "price_cents": 5999,
+    "currency": "USD",
+    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/wireless-earbuds.png"
+  },
+  {
+    "name": "Linen Throw Pillow",
+    "description": "18 x 18 inch linen pillow cover with insert.",
+    "price_cents": 3499,
+    "currency": "USD",
+    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/linen-throw-pillow.png"
+  },
+  {
+    "name": "Stainless Water Bottle",
+    "description": "750 ml insulated stainless steel bottle.",
+    "price_cents": 2799,
+    "currency": "USD",
+    "image_url": "https://BUCKET_NAME.s3.amazonaws.com/products/stainless-water-bottle.png"
+  }
+]
