@@ -44,7 +44,7 @@ docker compose up --build
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string (secret; on AWS injected from Secrets Manager) |
 | `CORS_ALLOW_ORIGINS` | Comma-separated browser origins, default `http://localhost:5173,http://127.0.0.1:5173` |
-| `GIT_SHA`, `APP_VERSION` | Build identifiers shown by `GET /version` |
+| `GIT_SHA` | Commit SHA shown by `GET /version`, set at image build time. The version number is `APP_VERSION` in `app/config.py` |
 
 ## Tests
 

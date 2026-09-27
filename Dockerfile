@@ -7,11 +7,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 
-# Non-sensitive build identifiers, exposed by GET /version.
+# Commit SHA exposed by GET /version. The version number itself lives only in app/config.py.
 ARG GIT_SHA=local
-ARG APP_VERSION=0.2.1
 ENV GIT_SHA=${GIT_SHA} \
-    APP_VERSION=${APP_VERSION} \
     PYTHONUNBUFFERED=1
 
 # Run as an unprivileged user.
