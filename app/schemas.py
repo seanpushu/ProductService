@@ -7,13 +7,17 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ProductStatus = Literal["ACTIVE", "INACTIVE"]
 
+# products.price_cents is a PostgreSQL INTEGER (32-bit). Reject larger values
+# with 422 instead of letting the database raise and the API return 500.
+MAX_PRICE_CENTS = 2_147_483_647
+
 _NAME = Field(min_length=1, max_length=120, examples=["Wooden Desk Lamp"])
 _DESCRIPTION = Field(default=None, max_length=2000)
-_PRICE = Field(ge=0, description="Price in integer cents", examples=[4999])
+_PRICE = Field(ge=0, le=MAX_PRICE_CENTS, description="Price in integer cents", examples=[4999])
 _CURRENCY = Field(default="USD", pattern=r"^[A-Z]{3}$")
 _IMAGE_URL = Field(
     default=None,
@@ -36,10 +40,19 @@ class ProductUpdate(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=120)
     description: str | None = _DESCRIPTION
-    price_cents: int | None = Field(default=None, ge=0)
+    price_cents: int | None = Field(default=None, ge=0, le=MAX_PRICE_CENTS)
     currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
     image_url: str | None = _IMAGE_URL
     status: ProductStatus | None = None
+
+    @model_validator(mode="after")
+    def _no_null_for_required_columns(self) -> "ProductUpdate":
+        # Omitting a field means "leave it alone"; sending null for a NOT NULL
+        # column would otherwise fail inside the database with a 500.
+        for field in ("name", "price_cents", "currency", "status"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
+        return self
 
 
 class ProductOut(BaseModel):

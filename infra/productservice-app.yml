@@ -1,0 +1,224 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Product Service application stack: ALB (HTTPS) + ECS Fargate service + DNS.
+  Reuses existing VPC, subnets, ECS cluster, RDS, ECR, log group and the
+  database secret; those are passed in as parameters and are NOT managed here.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: Full ECR image URI including the commit-SHA tag
+  GitSha:
+    Type: String
+    Default: unknown
+  AppVersion:
+    Type: String
+    Default: 0.2.0
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Public subnets for ALB and tasks (no NAT gateway)
+  ClusterName:
+    Type: String
+    Default: productservice-cluster
+  ServiceName:
+    Type: String
+    Default: productservice-api
+  RdsSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Existing RDS security group; this stack only adds one ingress rule
+  DatabaseUrlSecretArn:
+    Type: String
+    Description: Secrets Manager secret whose value is the full DATABASE_URL
+  LogGroupName:
+    Type: String
+    Default: /ecs/productservice
+  CertificateArn:
+    Type: String
+    Description: ACM certificate (us-east-1) covering DomainName
+  DomainName:
+    Type: String
+    Default: api.shupu.me
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+  CorsAllowOrigins:
+    Type: String
+    Description: Comma-separated browser origins allowed by CORS
+  DesiredCount:
+    Type: Number
+    Default: 1
+    MinValue: 0
+    MaxValue: 2
+
+Resources:
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Product Service ALB - public HTTP/HTTPS
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0}
+        - {IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0}
+      Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-alb'}]
+
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Product Service tasks - 8080 from the ALB only
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - {IpProtocol: tcp, FromPort: 8080, ToPort: 8080, SourceSecurityGroupId: !Ref AlbSecurityGroup}
+      Tags: [{Key: Name, Value: !Sub '${AWS::StackName}-tasks'}]
+
+  RdsIngressFromTasks:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref RdsSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref TaskSecurityGroup
+      Description: !Sub 'PostgreSQL from ${AWS::StackName} tasks'
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: productservice-api-alb
+      Type: application
+      Scheme: internet-facing
+      Subnets: !Ref SubnetIds
+      SecurityGroups: [!Ref AlbSecurityGroup]
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: productservice-api-tg
+      VpcId: !Ref VpcId
+      Protocol: HTTP
+      Port: 8080
+      TargetType: ip
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 15
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher: {HttpCode: '200'}
+      TargetGroupAttributes:
+        - {Key: deregistration_delay.timeout_seconds, Value: '30'}
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig: {Protocol: HTTPS, Port: '443', StatusCode: HTTP_301}
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates: [{CertificateArn: !Ref CertificateArn}]
+      DefaultActions: [{Type: forward, TargetGroupArn: !Ref TargetGroup}]
+
+  # Used by ECS itself: pull the image, write logs, read the DB secret.
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - {Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: sts:AssumeRole}
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-database-secret
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - {Effect: Allow, Action: secretsmanager:GetSecretValue, Resource: !Ref DatabaseUrlSecretArn}
+
+  # Used by the application code. It calls no AWS APIs, so it has no policies.
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - {Effect: Allow, Principal: {Service: ecs-tasks.amazonaws.com}, Action: sts:AssumeRole}
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: productservice-api
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      RuntimePlatform: {CpuArchitecture: X86_64, OperatingSystemFamily: LINUX}
+      Cpu: '256'
+      Memory: '512'
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: productservice
+          Image: !Ref ImageUri
+          Essential: true
+          PortMappings: [{ContainerPort: 8080, Protocol: tcp}]
+          Environment:
+            - {Name: CORS_ALLOW_ORIGINS, Value: !Ref CorsAllowOrigins}
+            - {Name: GIT_SHA, Value: !Ref GitSha}
+            - {Name: APP_VERSION, Value: !Ref AppVersion}
+          Secrets:
+            - {Name: DATABASE_URL, ValueFrom: !Ref DatabaseUrlSecretArn}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroupName
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: api
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: [HttpsListener, RdsIngressFromTasks]
+    Properties:
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref ClusterName
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      LaunchType: FARGATE
+      HealthCheckGracePeriodSeconds: 60
+      EnableExecuteCommand: false
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        # Failed deployments roll back to the last working task definition.
+        DeploymentCircuitBreaker: {Enable: true, Rollback: true}
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED   # public subnets + public IP: pulls from ECR without a NAT gateway
+          Subnets: !Ref SubnetIds
+          SecurityGroups: [!Ref TaskSecurityGroup]
+      LoadBalancers:
+        - {ContainerName: productservice, ContainerPort: 8080, TargetGroupArn: !Ref TargetGroup}
+
+  DnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt LoadBalancer.DNSName
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+        EvaluateTargetHealth: false
+
+Outputs:
+  ApiUrl: {Value: !Sub 'https://${DomainName}'}
+  AlbDnsName: {Value: !GetAtt LoadBalancer.DNSName}
+  TargetGroupArn: {Value: !Ref TargetGroup}
+  ServiceName: {Value: !GetAtt Service.Name}
+  TaskDefinitionArn: {Value: !Ref TaskDefinition}

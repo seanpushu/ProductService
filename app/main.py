@@ -3,8 +3,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app import models  # noqa: F401  (registers the Product model on Base)
+from app.config import APP_VERSION, CORS_ALLOW_ORIGINS, GIT_SHA
 from app.db import Base, engine
 from app.routers import products
 
@@ -19,9 +21,19 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Product Service",
-    version="0.1.0",
+    version=APP_VERSION,
     description="Product catalog API for the AI Product project (02 Product Service).",
     lifespan=lifespan,
+)
+
+# The public catalog only needs credential-free GET requests from the browser.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOW_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type"],
+    max_age=600,
 )
 
 app.include_router(products.router)
@@ -34,5 +46,11 @@ def root() -> dict[str, str]:
 
 @app.get("/health", tags=["meta"])
 def health() -> dict[str, str]:
-    """Used by the ALB target group health check."""
+    """Used by the ALB target group health check. Process liveness only."""
     return {"status": "ok"}
+
+
+@app.get("/version", tags=["meta"])
+def version() -> dict[str, str]:
+    """Which build is running. Used to confirm an automatic deploy landed."""
+    return {"service": "product-service", "version": APP_VERSION, "git_sha": GIT_SHA}

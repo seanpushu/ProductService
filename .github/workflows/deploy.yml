@@ -1,0 +1,134 @@
+name: Deploy
+
+# Every push to main: run CI first; only if it passes, build an image tagged
+# with the commit SHA, push it to ECR and roll it out through CloudFormation.
+# workflow_dispatch allows a controlled re-run of main; it is not the normal path.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time. A newer push waits; a running stack update is never cancelled.
+concurrency:
+  group: productservice-deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: productservice
+  STACK_NAME: productservice-app
+  CLUSTER_NAME: productservice-cluster
+  SERVICE_NAME: productservice-api
+  API_URL: https://api.shupu.me
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Build, push, deploy, verify
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      id-token: write   # OIDC: short-lived AWS credentials, no stored access keys
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: productservice-${{ github.run_id }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image tagged with the commit SHA
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          IMAGE="$REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA"
+          if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$GITHUB_SHA" >/dev/null 2>&1; then
+            echo "Image for $GITHUB_SHA already in ECR, reusing it"
+          else
+            docker build --platform linux/amd64 --build-arg GIT_SHA="$GITHUB_SHA" -t "$IMAGE" .
+            docker push "$IMAGE"
+          fi
+          echo "uri=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "Image: $IMAGE"
+
+      - name: Deploy CloudFormation stack
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+          CFN_EXEC_ROLE_ARN: ${{ vars.CFN_EXEC_ROLE_ARN }}
+          VPC_ID: ${{ vars.VPC_ID }}
+          SUBNET_IDS: ${{ vars.SUBNET_IDS }}
+          RDS_SG_ID: ${{ vars.RDS_SECURITY_GROUP_ID }}
+          DB_SECRET_ARN: ${{ vars.DATABASE_URL_SECRET_ARN }}
+          CERT_ARN: ${{ vars.CERTIFICATE_ARN }}
+          HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
+          CORS: ${{ vars.CORS_ALLOW_ORIGINS }}
+        run: |
+          for v in CFN_EXEC_ROLE_ARN VPC_ID SUBNET_IDS RDS_SG_ID DB_SECRET_ARN CERT_ARN HOSTED_ZONE_ID CORS; do
+            [ -n "${!v}" ] || { echo "Missing repository variable for $v"; exit 1; }
+          done
+          echo "Stack=$STACK_NAME commit=$GITHUB_SHA image=$IMAGE_URI"
+          # Waits for CREATE/UPDATE_COMPLETE; ECS steady state is part of that.
+          # If tasks fail health checks the circuit breaker rolls back and this fails.
+          aws cloudformation deploy \
+            --stack-name "$STACK_NAME" \
+            --template-file infra/productservice-app.yml \
+            --role-arn "$CFN_EXEC_ROLE_ARN" \
+            --no-fail-on-empty-changeset \
+            --capabilities CAPABILITY_IAM \
+            --tags project=productservice managed-by=github-actions \
+            --parameter-overrides \
+              ImageUri="$IMAGE_URI" \
+              GitSha="$GITHUB_SHA" \
+              VpcId="$VPC_ID" \
+              SubnetIds="$SUBNET_IDS" \
+              ClusterName="$CLUSTER_NAME" \
+              ServiceName="$SERVICE_NAME" \
+              RdsSecurityGroupId="$RDS_SG_ID" \
+              DatabaseUrlSecretArn="$DB_SECRET_ARN" \
+              CertificateArn="$CERT_ARN" \
+              HostedZoneId="$HOSTED_ZONE_ID" \
+              CorsAllowOrigins="$CORS"
+
+      - name: Verify ECS runs this commit and targets are healthy
+        run: |
+          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"
+          TD=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query "services[0].taskDefinition" --output text)
+          RUNNING_IMAGE=$(aws ecs describe-task-definition --task-definition "$TD" --query "taskDefinition.containerDefinitions[0].image" --output text)
+          echo "Service=$SERVICE_NAME taskDefinition=$TD image=$RUNNING_IMAGE"
+          [ "$RUNNING_IMAGE" = "${{ steps.image.outputs.uri }}" ] || { echo "Service is not running the new image"; exit 1; }
+          TG=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='TargetGroupArn'].OutputValue" --output text)
+          aws elbv2 describe-target-health --target-group-arn "$TG" --query "TargetHealthDescriptions[].[Target.Id,TargetHealth.State]" --output text
+          HEALTHY=$(aws elbv2 describe-target-health --target-group-arn "$TG" --query "length(TargetHealthDescriptions[?TargetHealth.State=='healthy'])" --output text)
+          [ "$HEALTHY" -ge 1 ] || { echo "No healthy targets"; exit 1; }
+
+      - name: Verify public HTTPS endpoints (health, version, products from RDS)
+        run: |
+          set -o pipefail
+          for i in $(seq 1 30); do
+            SHA=$(curl -fsS "$API_URL/version" | python3 -c "import sys,json;print(json.load(sys.stdin)['git_sha'])" || true)
+            [ "$SHA" = "$GITHUB_SHA" ] && break
+            echo "waiting for $API_URL/version to report $GITHUB_SHA (got '$SHA')"; sleep 10
+          done
+          [ "$SHA" = "$GITHUB_SHA" ] || { echo "Public API is not serving this commit"; exit 1; }
+          curl -fsS "$API_URL/health"; echo
+          curl -fsS "$API_URL/products?limit=5" | python3 -c "import sys,json;d=json.load(sys.stdin);print('products total =',d['total'],'first page =',len(d['items']))"
+          echo "Deployed commit $GITHUB_SHA to $API_URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Show recent stack events on failure
+        if: failure()
+        run: |
+          aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --max-items 25 \
+            --query "StackEvents[].[Timestamp,LogicalResourceId,ResourceStatus,ResourceStatusReason]" --output table || true
