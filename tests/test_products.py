@@ -94,3 +94,29 @@ def test_validation_and_404(client):
     assert client.put(f"/products/{missing}", json={"name": "y"}).status_code == 404
     assert client.delete(f"/products/{missing}").status_code == 404
     assert client.get("/products/not-a-uuid").status_code == 422
+    assert client.post("/products", json={"name": "x", "price_cents": 2**31}).status_code == 422
+    assert client.get("/products?limit=0").status_code == 422
+    assert client.get("/products?offset=-1").status_code == 422
+
+
+def test_update_rejects_null_for_required_fields(client):
+    pid = client.post("/products", json={"name": "Lamp", "price_cents": 10}).json()["id"]
+    for field in ("name", "price_cents", "currency", "status"):
+        assert client.put(f"/products/{pid}", json={field: None}).status_code == 422, field
+    # Optional columns may be cleared.
+    r = client.put(f"/products/{pid}", json={"image_url": None})
+    assert r.status_code == 200 and r.json()["image_url"] is None
+
+
+def test_version(client):
+    body = client.get("/version").json()
+    assert body["service"] == "product-service"
+    assert {"version", "git_sha"} <= body.keys()
+
+
+def test_cors_allows_configured_origin_only(client):
+    ok = client.get("/products", headers={"Origin": "http://localhost:5173"})
+    assert ok.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert "access-control-allow-credentials" not in ok.headers
+    bad = client.get("/products", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in bad.headers
