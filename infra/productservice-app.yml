@@ -11,9 +11,6 @@ Parameters:
   GitSha:
     Type: String
     Default: unknown
-  AppVersion:
-    Type: String
-    Default: 0.2.1
   VpcId:
     Type: AWS::EC2::VPC::Id
   SubnetIds:
@@ -171,7 +168,6 @@ Resources:
           Environment:
             - {Name: CORS_ALLOW_ORIGINS, Value: !Ref CorsAllowOrigins}
             - {Name: GIT_SHA, Value: !Ref GitSha}
-            - {Name: APP_VERSION, Value: !Ref AppVersion}
           Secrets:
             - {Name: DATABASE_URL, ValueFrom: !Ref DatabaseUrlSecretArn}
           LogConfiguration:
