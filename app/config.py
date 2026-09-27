@@ -20,5 +20,5 @@ CORS_ALLOW_ORIGINS: list[str] = _split_csv(
 )
 
 # Non-sensitive build identifiers, set by the Docker build / deploy pipeline.
-APP_VERSION: str = os.getenv("APP_VERSION", "0.2.0")
+APP_VERSION: str = os.getenv("APP_VERSION", "0.2.1")
 GIT_SHA: str = os.getenv("GIT_SHA", "local")
