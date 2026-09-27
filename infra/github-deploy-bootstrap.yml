@@ -8,6 +8,10 @@ Parameters:
   GitHubRepo:
     Type: String
     Default: seanpushu/ProductService
+  GitHubRepoImmutable:
+    Type: String
+    Default: seanpushu@124030213/ProductService@1384496468
+    Description: owner@ownerId/repo@repoId, from GET /repos/{repo}/actions/oidc/customization/sub
   AppStackName:
     Type: String
     Default: productservice-app
@@ -141,7 +145,10 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubRepo}:ref:refs/heads/main'
+                # GitHub immutable subject (owner/repo IDs survive renames) and the legacy name form.
+                token.actions.githubusercontent.com:sub:
+                  - !Sub 'repo:${GitHubRepoImmutable}:ref:refs/heads/main'
+                  - !Sub 'repo:${GitHubRepo}:ref:refs/heads/main'
       Policies:
         - PolicyName: push-image
           PolicyDocument:
