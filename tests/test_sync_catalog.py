@@ -21,7 +21,7 @@ def test_catalog_file_is_consistent():
     assert len(names) == len(set(names))
     for p in CATALOG["products"]:
         assert p["price_cents"] > 0 and p["currency"] == "USD"
-        assert (ROOT / "seed" / "images" / "custom" / p["image"]).is_file(), p["image"]
+        assert (ROOT / "seed" / "images" / "photos" / p["image"]).is_file(), p["image"]
         assert "Customizable" in p["name"]
 
 
@@ -34,6 +34,19 @@ def test_plan_creates_missing_and_is_idempotent():
     existing = [row(c["name"]) for c in p["create"]]
     existing[0]["status"] = "INACTIVE"
     assert sync.plan(existing, CATALOG, "https://img.test", set())["create"] == []
+
+
+def test_update_only_exact_names_and_only_image_or_description():
+    item = CATALOG["products"][0]
+    stale = {**row(item["name"], pid="c1"), "description": "old", "image_url": "http://old/x.svg", "price_cents": 1}
+    similar = {**row(item["name"] + " v2", pid="c2"), "description": "x", "image_url": "y"}
+    p = sync.plan([stale, similar], CATALOG, "https://img.test/p", set())
+    [u] = p["update"]
+    assert u["id"] == "c1" and set(u["changes"]) == {"description", "image_url"}
+    assert u["changes"]["image_url"] == f"https://img.test/p/{item['image']}"
+    # Up to date -> no update.
+    fresh = {**stale, **u["changes"]}
+    assert sync.plan([fresh], CATALOG, "https://img.test/p", set())["update"] == []
 
 
 def test_retire_only_by_explicit_id_and_listed_name():

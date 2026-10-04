@@ -10,6 +10,8 @@ old products would be taken off the shelf, and changes nothing.
 Rules
 - Creates a catalog product only if no product (ACTIVE or INACTIVE) with the
   exact same name exists, so re-running never creates duplicates.
+- For products whose name exactly equals a catalog name, updates only
+  description / image_url when they differ (never price, status or others).
 - Never deletes rows. Old products are soft-deleted (DELETE -> status
   INACTIVE), which keeps them for history and can be undone with
   PUT {"status": "ACTIVE"}.
@@ -55,25 +57,33 @@ def load_all(base: str) -> list[dict]:
 
 
 def plan(existing: list[dict], catalog: dict, image_base: str, retire_ids: set[str]) -> dict:
-    names = {p["name"] for p in existing}
-    create = []
+    by_name: dict[str, list[dict]] = {}
+    for p in existing:
+        by_name.setdefault(p["name"], []).append(p)
+    create, update = [], []
     for item in catalog["products"]:
-        if item["name"] in names:
+        wanted = {
+            "name": item["name"],
+            "description": item["description"],
+            "price_cents": item["price_cents"],
+            "currency": item["currency"],
+            "image_url": image_base.rstrip("/") + "/" + item["image"],
+        }
+        matches = by_name.get(item["name"], [])
+        if not matches:
+            create.append(wanted)
             continue
-        create.append(
-            {
-                "name": item["name"],
-                "description": item["description"],
-                "price_cents": item["price_cents"],
-                "currency": item["currency"],
-                "image_url": image_base.rstrip("/") + "/" + item["image"],
-            }
-        )
+        # Exact-name catalog rows only (never fuzzy): refresh image / copy if they drifted.
+        for p in matches:
+            changes = {k: wanted[k] for k in ("description", "image_url") if p.get(k) != wanted[k]}
+            if changes:
+                update.append({"id": p["id"], "name": p["name"], "changes": changes})
+    names = set(by_name)
     retire_names = set(catalog["retire_names"])
     candidates = [p for p in existing if p["name"] in retire_names and p["status"] == "ACTIVE"]
     retire = [p for p in candidates if p["id"] in retire_ids]
     unknown = sorted(retire_ids - {p["id"] for p in candidates})
-    return {"create": create, "retire_candidates": candidates, "retire": retire, "unknown_ids": unknown}
+    return {"create": create, "update": update, "retire_candidates": candidates, "retire": retire, "unknown_ids": unknown}
 
 
 def main() -> int:
@@ -93,6 +103,9 @@ def main() -> int:
     print(f"create {len(p['create'])}:")
     for c in p["create"]:
         print(f"  + {c['name']}  {c['price_cents']} {c['currency']}  {c['image_url']}")
+    print(f"update {len(p['update'])} (exact-name catalog products, description / image only):")
+    for u in p["update"]:
+        print(f"  ~ {u['id']}  {u['name']}  fields: {', '.join(u['changes'])}")
     print(f"old products on the retire list still ACTIVE: {len(p['retire_candidates'])}")
     for c in p["retire_candidates"]:
         flag = "will take off shelf" if c in p["retire"] else "kept (pass --retire-id to retire)"
@@ -110,6 +123,11 @@ def main() -> int:
         ok = status == 201
         failed += not ok
         print(f"  {'created' if ok else 'FAILED '} {body.get('id', '')} {c['name']}" + ("" if ok else f" HTTP {status} {body}"))
+    for u in p["update"]:
+        status, body = call("PUT", f"{base}/products/{u['id']}", u["changes"])
+        ok = status == 200
+        failed += not ok
+        print(f"  {'updated' if ok else 'FAILED '} {u['id']} {u['name']}" + ("" if ok else f" HTTP {status} {body}"))
     for c in p["retire"]:
         status, body = call("DELETE", f"{base}/products/{c['id']}")
         ok = status == 204

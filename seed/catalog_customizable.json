@@ -1,48 +1,47 @@
 {
-  "description": "Customizable catalog (AI personalised products). Prices and copy are demo data; there is no real supplier or printing integration.",
-  "image_base_url_placeholder": "{IMAGE_BASE}",
+  "description": "Customizable catalog (AI personalised products). Prices and copy are demo data; there is no real supplier or printing integration. Photos: seed/images/photos/SOURCES.md.",
   "products": [
     {
       "name": "Classic Cotton T-Shirt (Customizable)",
-      "description": "Soft 100% cotton crew-neck tee with a front print area for your own design. Demo item; printing is not yet available.",
+      "description": "White 100% cotton crew-neck tee with a front print area for your own design. Demo item; printing is not yet available.",
       "price_cents": 1999,
       "currency": "USD",
-      "image": "classic-tee.svg"
+      "image": "classic-tee.jpg"
     },
     {
       "name": "Heavyweight Oversized T-Shirt (Customizable)",
-      "description": "Thicker relaxed-fit tee in navy with a large front print area. Demo item; printing is not yet available.",
+      "description": "Thicker, relaxed-fit white tee with a large front print area. Demo item; printing is not yet available.",
       "price_cents": 2499,
       "currency": "USD",
-      "image": "heavyweight-tee.svg"
+      "image": "heavyweight-tee.jpg"
     },
     {
       "name": "Pullover Hoodie (Customizable)",
-      "description": "Fleece-lined hoodie with kangaroo pocket and a chest print area for your design. Demo item; printing is not yet available.",
+      "description": "Brown fleece pullover hoodie with a chest print area for your design. Demo item; printing is not yet available.",
       "price_cents": 3999,
       "currency": "USD",
-      "image": "pullover-hoodie.svg"
+      "image": "pullover-hoodie.jpg"
     },
     {
       "name": "Ceramic Mug 11 oz (Customizable)",
       "description": "White glossy ceramic mug with a wrap-around print area. Demo item; printing is not yet available.",
       "price_cents": 1499,
       "currency": "USD",
-      "image": "ceramic-mug.svg"
+      "image": "ceramic-mug.jpg"
     },
     {
       "name": "Baseball Cap (Customizable)",
-      "description": "Six-panel adjustable cap with a front panel for an embroidered or printed design. Demo item; printing is not yet available.",
+      "description": "White adjustable cap with a front panel for a printed or embroidered design. Demo item; printing is not yet available.",
       "price_cents": 1799,
       "currency": "USD",
-      "image": "baseball-cap.svg"
+      "image": "baseball-cap.jpg"
     },
     {
       "name": "Canvas Tote Bag (Customizable)",
-      "description": "Natural cotton canvas tote with long handles and a large print area. Demo item; printing is not yet available.",
+      "description": "White cotton canvas tote with long handles and a large print area. Demo item; printing is not yet available.",
       "price_cents": 1599,
       "currency": "USD",
-      "image": "canvas-tote.svg"
+      "image": "canvas-tote.jpg"
     }
   ],
   "retire_names": [
