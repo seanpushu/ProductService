@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="Baseball cap illustration">
+  <rect width="600" height="450" fill="#f2e2d9"/>
+  <path d="M170 280 Q170 120 300 120 Q430 120 430 280 Z" fill="#a2442f" stroke="#1d1a16" stroke-opacity="0.25" stroke-width="3"/>
+  <path d="M150 280 L450 280 Q520 290 470 320 L150 320 Z" fill="#a2442f" stroke="#1d1a16" stroke-opacity="0.3" stroke-width="3"/>
+  <circle cx="300" cy="122" r="9" fill="#1d1a16" fill-opacity="0.35"/>
+  <rect x="240" y="175" width="120" height="80" rx="10" fill="none" stroke="#1d1a16" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="10 7"/>
+  <text x="300.0" y="221.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#1d1a16" fill-opacity="0.7">Your design</text>
+  <text x="584" y="436" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#5f574f">Illustration</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="Canvas tote bag illustration">
+  <rect width="600" height="450" fill="#f4efe3"/>
+  <path d="M240 150 Q240 70 300 70 Q360 70 360 150" fill="none" stroke="#8a5a1c" stroke-width="14"/>
+  <rect x="170" y="140" width="260" height="260" rx="6" fill="#e7d8b9" stroke="#1d1a16" stroke-opacity="0.25" stroke-width="3"/>
+  <rect x="215" y="190" width="170" height="160" rx="10" fill="none" stroke="#1d1a16" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="10 7"/>
+  <text x="300.0" y="276.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#1d1a16" fill-opacity="0.7">Your design</text>
+  <text x="584" y="436" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#5f574f">Illustration</text>
+</svg>
