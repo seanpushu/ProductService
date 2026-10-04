@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="Ceramic mug illustration">
+  <rect width="600" height="450" fill="#efe5d8"/>
+  <rect x="185" y="110" width="200" height="240" rx="18" fill="#ffffff" stroke="#1d1a16" stroke-opacity="0.25" stroke-width="3"/>
+  <path d="M385 160 Q455 160 455 230 Q455 300 385 300" fill="none" stroke="#1d1a16" stroke-opacity="0.3" stroke-width="22"/>
+  <path d="M385 160 Q455 160 455 230 Q455 300 385 300" fill="none" stroke="#ffffff" stroke-width="14"/>
+  <rect x="215" y="165" width="140" height="130" rx="10" fill="none" stroke="#1d1a16" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="10 7"/>
+  <text x="285.0" y="236.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#1d1a16" fill-opacity="0.7">Your design</text>
+  <text x="584" y="436" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#5f574f">Illustration</text>
+</svg>

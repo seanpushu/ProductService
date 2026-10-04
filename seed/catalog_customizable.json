@@ -1,0 +1,56 @@
+{
+  "description": "Customizable catalog (AI personalised products). Prices and copy are demo data; there is no real supplier or printing integration.",
+  "image_base_url_placeholder": "{IMAGE_BASE}",
+  "products": [
+    {
+      "name": "Classic Cotton T-Shirt (Customizable)",
+      "description": "Soft 100% cotton crew-neck tee with a front print area for your own design. Demo item; printing is not yet available.",
+      "price_cents": 1999,
+      "currency": "USD",
+      "image": "classic-tee.svg"
+    },
+    {
+      "name": "Heavyweight Oversized T-Shirt (Customizable)",
+      "description": "Thicker relaxed-fit tee in navy with a large front print area. Demo item; printing is not yet available.",
+      "price_cents": 2499,
+      "currency": "USD",
+      "image": "heavyweight-tee.svg"
+    },
+    {
+      "name": "Pullover Hoodie (Customizable)",
+      "description": "Fleece-lined hoodie with kangaroo pocket and a chest print area for your design. Demo item; printing is not yet available.",
+      "price_cents": 3999,
+      "currency": "USD",
+      "image": "pullover-hoodie.svg"
+    },
+    {
+      "name": "Ceramic Mug 11 oz (Customizable)",
+      "description": "White glossy ceramic mug with a wrap-around print area. Demo item; printing is not yet available.",
+      "price_cents": 1499,
+      "currency": "USD",
+      "image": "ceramic-mug.svg"
+    },
+    {
+      "name": "Baseball Cap (Customizable)",
+      "description": "Six-panel adjustable cap with a front panel for an embroidered or printed design. Demo item; printing is not yet available.",
+      "price_cents": 1799,
+      "currency": "USD",
+      "image": "baseball-cap.svg"
+    },
+    {
+      "name": "Canvas Tote Bag (Customizable)",
+      "description": "Natural cotton canvas tote with long handles and a large print area. Demo item; printing is not yet available.",
+      "price_cents": 1599,
+      "currency": "USD",
+      "image": "canvas-tote.svg"
+    }
+  ],
+  "retire_names": [
+    "Cut & Peeled Baby Carrots, 16 Oz",
+    "Blueberries, 1 Pint",
+    "Sceptre 22-Inch Gaming Monitor, FHD 1080p, 144Hz",
+    "Electric Toothbrush Replacement Heads, 8 Pack",
+    "Inflatable Dinosaur Costume, Adult T-Rex",
+    "Fire TV Stick HD (newest model)"
+  ]
+}

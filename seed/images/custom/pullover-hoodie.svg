@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="Pullover hoodie illustration">
+  <rect width="600" height="450" fill="#e5ece2"/>
+  <path d="M205 105 L250 80 Q300 40 350 80 L395 105 L460 260 L420 275 L395 205 L395 395 L205 395 L205 205 L180 275 L140 260 Z" fill="#5b7a5e" stroke="#1d1a16" stroke-opacity="0.25" stroke-width="3"/>
+  <path d="M255 82 Q300 140 345 82" fill="none" stroke="#1d1a16" stroke-opacity="0.35" stroke-width="4"/>
+  <rect x="245" y="320" width="110" height="45" rx="8" fill="#000" fill-opacity="0.08"/>
+  <rect x="245" y="165" width="110" height="110" rx="10" fill="none" stroke="#1d1a16" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="10 7"/>
+  <text x="300.0" y="226.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#1d1a16" fill-opacity="0.7">Your design</text>
+  <text x="584" y="436" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#5f574f">Illustration</text>
+</svg>

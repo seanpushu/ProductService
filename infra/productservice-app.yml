@@ -218,3 +218,6 @@ Outputs:
   TargetGroupArn: {Value: !Ref TargetGroup}
   ServiceName: {Value: !GetAtt Service.Name}
   TaskDefinitionArn: {Value: !Ref TaskDefinition}
+  # Consumed by the User Service stack (path rules on the shared ALB).
+  HttpsListenerArn: {Value: !Ref HttpsListener}
+  AlbSecurityGroupId: {Value: !Ref AlbSecurityGroup}
